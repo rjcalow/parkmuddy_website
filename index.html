@@ -4,37 +4,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Is Clumber Park muddy?</title>
-  <meta name="description" content="A simple, modern mud estimate for Clumber Park based on recent rainfall and short-term forecast." />
+  <meta name="description" content="A simple mud estimate for Clumber Park based on recent rainfall + forecast." />
   <meta name="theme-color" content="#0b0d12" />
-
-  <!-- Minimal social -->
-  <meta property="og:title" content="Is Clumber Park muddy?" />
-  <meta property="og:description" content="A simple mud estimate based on recent rainfall + forecast." />
-  <meta property="og:type" content="website" />
-
   <style>
-    /* ---------------- Theme tokens ---------------- */
     :root{
-      --bg:#f7f7fb;
-      --text:#0b0d12;
-      --muted:#667085;
+      --bg:#f7f7fb; --text:#0b0d12; --muted:#667085;
       --stroke:rgba(0,0,0,0.12);
       --card:rgba(255,255,255,0.78);
       --shadow:0 18px 44px rgba(0,0,0,0.10);
       --glass: blur(10px);
-
-      --good:#16a34a;
-      --soft:#f59e0b;
-      --mud:#fb923c;
-      --bad:#ef4444;
-
+      --good:#16a34a; --soft:#f59e0b; --mud:#fb923c; --bad:#ef4444;
       --header-h:56px;
     }
     @media (prefers-color-scheme: dark){
       :root{
-        --bg:#0b0d12;
-        --text:#f2f4f8;
-        --muted:#aab3c2;
+        --bg:#0b0d12; --text:#f2f4f8; --muted:#aab3c2;
         --stroke:rgba(255,255,255,0.14);
         --card:rgba(18,22,34,0.78);
         --shadow:0 22px 60px rgba(0,0,0,0.55);
@@ -46,44 +30,33 @@
     *{ box-sizing:border-box; }
     html,body{ height:100%; margin:0; }
     body{
-      overflow:hidden;
       background:var(--bg);
       color:var(--text);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       -webkit-font-smoothing:antialiased;
       -moz-osx-font-smoothing:grayscale;
     }
-    a{ color:inherit; text-decoration:underline; text-underline-offset:3px; }
 
-    /* ---------------- Top bar ---------------- */
-    .topbar{
-      position:fixed; top:0; left:0; right:0;
-      z-index:50;
+    /* Sticky minimal top bar */
+    header{
+      position:fixed; top:0; left:0; right:0; z-index:20;
+      height:var(--header-h);
       border-bottom:1px solid var(--stroke);
       background: color-mix(in srgb, var(--bg) 82%, transparent);
       backdrop-filter: var(--glass);
+      display:flex; align-items:center;
     }
-    .topbarInner{
-      width:min(900px, 100%);
+    .headerInner{
+      width:min(820px, 100%);
       margin:0 auto;
-      padding:12px 14px;
+      padding:0 14px;
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:12px;
     }
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      font-weight:950;
-      letter-spacing:-0.02em;
-      white-space:nowrap;
-    }
-    .dot{
-      width:9px; height:9px; border-radius:50%;
-      background:linear-gradient(135deg,var(--good),var(--soft),var(--bad));
-    }
+    .brand{ font-weight:950; letter-spacing:-0.02em; display:flex; gap:10px; align-items:center; }
+    .dot{ width:9px; height:9px; border-radius:50%; background:linear-gradient(135deg,var(--good),var(--soft),var(--bad)); }
     .btn{
       border:1px solid var(--stroke);
       background:transparent;
@@ -94,23 +67,32 @@
       font-size:13px;
       cursor:pointer;
     }
-    .btn:active{ transform:translateY(1px); }
 
-    /* ---------------- Single-page layout ---------------- */
-    main{
+    /* Scroll snapping */
+    #scroller{
       height:100vh;
       padding-top:var(--header-h);
-      overflow:auto;
+      overflow-y:auto;
       -webkit-overflow-scrolling:touch;
+      scroll-snap-type:y mandatory;
     }
+    section{
+      min-height:calc(100vh - var(--header-h));
+      scroll-snap-align:start;
+      padding:16px 16px calc(16px + env(safe-area-inset-bottom));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    @media (prefers-reduced-motion: reduce){
+      #scroller{ scroll-snap-type:none; }
+    }
+
     .wrap{
-      width:min(900px, 100%);
-      margin:0 auto;
-      padding:16px;
+      width:min(820px, 100%);
       display:grid;
       gap:12px;
     }
-
     .card{
       background:var(--card);
       border:1px solid var(--stroke);
@@ -119,121 +101,59 @@
       box-shadow:var(--shadow);
       backdrop-filter: var(--glass);
     }
-
-    .row{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
-      flex-wrap:wrap;
-    }
     .muted{ color:var(--muted); }
     .tiny{ font-size:12px; }
-    h1{
-      margin:0;
-      font-size:22px;
-      font-weight:950;
-      letter-spacing:-0.02em;
-    }
+    a{ color:inherit; text-decoration:underline; text-underline-offset:3px; }
 
-    /* ---------------- Hero "mud postcard" ---------------- */
-    .hero{
-      position:relative;
-      border-radius:26px;
-      border:1px solid var(--stroke);
-      overflow:hidden;
-      height:min(62vh, 520px);
-      background: color-mix(in srgb, var(--bg) 88%, transparent);
-    }
-
-    /* background bands (dry -> soft -> muddy -> very muddy) */
-    .band{ position:absolute; left:0; right:0; }
-    .band.good{ background: color-mix(in srgb, var(--good) 18%, transparent); }
-    .band.soft{ background: color-mix(in srgb, var(--soft) 18%, transparent); }
-    .band.mud { background: color-mix(in srgb, var(--mud) 18%, transparent); }
-    .band.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); }
-
-    /* main indicator line */
-    .line{
-      position:absolute; left:0; right:0;
-      height:3px;
-      background: color-mix(in srgb, var(--text) 85%, transparent);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.20);
-    }
-
-    /* glow fill under the line */
-    .fill{
-      position:absolute; left:0; right:0; bottom:0;
-      background: color-mix(in srgb, var(--text) 6%, transparent);
-    }
-
-    /* label pill */
-    .label{
-      position:absolute;
-      left:14px;
-      transform: translateY(-50%);
-      display:inline-flex;
-      align-items:center;
+    /* Big status */
+    .bigStatus{
+      display:flex;
+      flex-direction:column;
       gap:10px;
-      padding:10px 12px;
-      border-radius:999px;
-      border:1px solid var(--stroke);
-      background: color-mix(in srgb, var(--bg) 76%, transparent);
-      backdrop-filter: var(--glass);
-      box-shadow: 0 16px 38px rgba(0,0,0,0.16);
-      font-size:13px;
-      font-weight:950;
-      letter-spacing:-0.01em;
-      white-space:nowrap;
+      align-items:flex-start;
     }
-    .emoji{
+    .bigWord{
+      font-size: clamp(42px, 10vw, 78px);
+      font-weight: 1000;
+      letter-spacing:-0.03em;
+      line-height:0.95;
+      margin:0;
+    }
+    .sub{
       font-size:16px;
-      line-height:1;
+      line-height:1.5;
+      margin:0;
     }
-    .tag{
-      display:inline-flex;
-      align-items:center;
+    .pillRow{
+      display:flex;
       gap:8px;
-      padding:6px 10px;
-      border-radius:999px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top:6px;
+    }
+    .pill{
       border:1px solid var(--stroke);
-      background:transparent;
+      border-radius:999px;
+      padding:6px 10px;
       font-size:12px;
       font-weight:850;
-      width:fit-content;
-    }
-    .dotSmall{ width:10px; height:10px; border-radius:50%; display:inline-block; }
-
-    /* stats grid */
-    .grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-      margin-top:10px;
-    }
-    @media (min-width: 820px){
-      .grid{ grid-template-columns:repeat(4, 1fr); }
-    }
-    .stat{
-      border:1px solid var(--stroke);
-      border-radius:18px;
-      padding:12px;
       background: transparent;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
     }
-    .num{
-      font-size:26px;
-      font-weight:950;
-      letter-spacing:-0.02em;
-      margin-top:4px;
+    .statusDot{
+      width:10px; height:10px; border-radius:50%;
+      background: transparent;
+      border:1px solid var(--stroke);
     }
-    .err{ color:#b00020; }
   </style>
 </head>
 
 <body>
-  <header class="topbar">
-    <div class="topbarInner">
-      <div class="brand"><span class="dot"></span><span>Clumber Park</span></div>
+  <header>
+    <div class="headerInner">
+      <div class="brand"><span class="dot"></span><span>isclumberparkmuddy.com</span></div>
       <div style="display:flex; gap:8px; align-items:center;">
         <button class="btn" id="refreshBtn" type="button">Refresh</button>
         <button class="btn" id="themeBtn" type="button">Theme</button>
@@ -241,135 +161,85 @@
     </div>
   </header>
 
-  <main>
-    <div class="wrap">
-      <!-- HERO HEADER -->
-      <div class="card">
-        <div class="row">
-          <div>
-            <h1>Is it muddy?</h1>
-            <div class="muted tiny">Best estimate for Clumber Park based on rainfall + short-term forecast.</div>
+  <main id="scroller">
+    <!-- 1) STATUS -->
+    <section id="status">
+      <div class="wrap">
+        <div class="card">
+          <div class="bigStatus">
+            <p class="tiny muted" id="updatedText" style="margin:0;">Updated: —</p>
+
+            <h1 class="bigWord" id="bigWord">Loading…</h1>
+
+            <p class="sub muted" id="guidance">—</p>
+
+            <div class="pillRow">
+              <span class="pill"><span class="statusDot" id="statusDot"></span><span id="label">—</span></span>
+              <span class="pill">Rain 24h: <span id="rain24">—</span> mm</span>
+              <span class="pill">Next 12h: <span id="rain12">—</span> mm</span>
+            </div>
+
+            <p class="tiny muted" id="error" style="margin:10px 0 0 0; min-height:16px;"></p>
           </div>
-          <div class="muted tiny" id="updatedText">Updated: —</div>
+        </div>
+
+        <div class="card">
+          <p class="tiny muted" style="margin:0;">
+            Scroll ↓ for about
+          </p>
         </div>
       </div>
+    </section>
 
-      <!-- HERO GRAPHIC -->
-      <div class="card" style="padding:12px;">
-        <div class="hero" aria-label="Mud estimate graphic">
-          <!-- bands (set by JS) -->
-          <div class="band good" id="bandGood"></div>
-          <div class="band soft" id="bandSoft"></div>
-          <div class="band mud"  id="bandMud"></div>
-          <div class="band bad"  id="bandBad"></div>
-
-          <div class="fill" id="fill"></div>
-          <div class="line" id="line"></div>
-
-          <div class="label" id="label">
-            <span class="emoji" id="emoji">—</span>
-            <span id="statusText">Loading…</span>
-          </div>
+    <!-- 2) ABOUT -->
+    <section id="about">
+      <div class="wrap">
+        <div class="card">
+          <h2 style="margin:0; font-size:18px; font-weight:950;">About</h2>
+          <p class="muted" style="margin:10px 0 0 0; line-height:1.6;">
+            This is a simple “damp / not damp” estimate for Clumber Park based on recent rainfall and the short-term forecast.
+            It’s not an official report — conditions vary by route (main paths vs woodland).
+          </p>
+          <p class="tiny muted" style="margin:10px 0 0 0;">
+            Data source: Open-Meteo (via a cached Cloudflare Worker).
+          </p>
+          <p class="tiny muted" style="margin:10px 0 0 0;">
+            <a href="/api/" id="apiLink">View API JSON</a>
+          </p>
         </div>
-
-        <div style="margin-top:12px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;">
-          <div class="tag"><span class="dotSmall" id="statusDot"></span><span id="guidance">—</span></div>
-          <div class="muted tiny" id="cacheText">—</div>
-        </div>
-
-        <div id="error" class="muted tiny err" style="margin-top:10px; min-height:16px;"></div>
       </div>
+    </section>
 
-      <!-- STATS -->
-      <div class="card">
-        <div class="row">
-          <div>
-            <div style="font-weight:950;">Rainfall</div>
-            <div class="muted tiny">These numbers drive the mud estimate.</div>
-          </div>
-          <div class="muted tiny">mm</div>
-        </div>
+    <!-- 3) SUPPORT -->
+    <section id="support">
+      <div class="wrap">
+        <div class="card">
+          <h2 style="margin:0; font-size:18px; font-weight:950;">Support</h2>
+          <p class="muted" style="margin:10px 0 0 0; line-height:1.6;">
+            If this page is useful and you want to support improvements (better accuracy, more parks, nicer sharing cards),
+            you can chip in.
+          </p>
 
-        <div class="grid">
-          <div class="stat">
-            <div class="muted tiny">Last 24h</div>
-            <div class="num" id="rain24">—</div>
-          </div>
-          <div class="stat">
-            <div class="muted tiny">Last 72h</div>
-            <div class="num" id="rain72">—</div>
-          </div>
-          <div class="stat">
-            <div class="muted tiny">Next 12h</div>
-            <div class="num" id="rainNext12">—</div>
-          </div>
-          <div class="stat">
-            <div class="muted tiny">Next 24h</div>
-            <div class="num" id="rainNext24">—</div>
-          </div>
-        </div>
-
-        <p class="muted tiny" style="margin:12px 0 0 0; line-height:1.55;">
-          Not an official report. Conditions vary by route (main paths vs woodland). If you’re unsure, check the official park info too.
-        </p>
-      </div>
-
-      <!-- FOOTER -->
-      <div class="card">
-        <div class="row">
-          <div class="muted tiny">
-            Data from Open-Meteo via your cached Worker endpoint.
-          </div>
-          <div class="muted tiny">
-            <a href="#" id="apiLink">API</a>
+          <!-- Replace this with your real link -->
+          <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <a class="btn" href="#" onclick="alert('Add your support link here (Ko-fi / BuyMeACoffee).'); return false;"
+               style="text-decoration:none; display:inline-block;">Support</a>
+            <span class="tiny muted">Thanks ❤️</span>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   </main>
 
   <script>
-    // Point this at your worker route
-    // e.g. https://clumbermud.co.uk/api/clumber
-    const API_URL = "/api/clumber";
-
-    // UI refs
-    const el = {
-      updatedText: document.getElementById("updatedText"),
-      cacheText: document.getElementById("cacheText"),
-      error: document.getElementById("error"),
-      refreshBtn: document.getElementById("refreshBtn"),
-      apiLink: document.getElementById("apiLink"),
-
-      // hero
-      line: document.getElementById("line"),
-      fill: document.getElementById("fill"),
-      label: document.getElementById("label"),
-      emoji: document.getElementById("emoji"),
-      statusText: document.getElementById("statusText"),
-      statusDot: document.getElementById("statusDot"),
-      guidance: document.getElementById("guidance"),
-
-      // bands
-      bandGood: document.getElementById("bandGood"),
-      bandSoft: document.getElementById("bandSoft"),
-      bandMud: document.getElementById("bandMud"),
-      bandBad: document.getElementById("bandBad"),
-
-      // stats
-      rain24: document.getElementById("rain24"),
-      rain72: document.getElementById("rain72"),
-      rainNext12: document.getElementById("rainNext12"),
-      rainNext24: document.getElementById("rainNext24"),
-    };
-
-    el.apiLink.href = API_URL;
+    // Your worker endpoint (same domain)
+    const API_URL = "/api/";
 
     // Theme toggle
     (function(){
       const root = document.documentElement;
       const metaTheme = document.querySelector('meta[name="theme-color"]');
-      const saved = localStorage.getItem("clumber_theme");
+      const saved = localStorage.getItem("icpm_theme");
       if (saved === "light" || saved === "dark") root.dataset.theme = saved;
       if (metaTheme) metaTheme.setAttribute("content", root.dataset.theme === "dark" ? "#0b0d12" : "#f7f7fb");
 
@@ -377,43 +247,45 @@
         const cur = root.dataset.theme || "";
         const next = (cur === "dark") ? "light" : "dark";
         root.dataset.theme = next;
-        localStorage.setItem("clumber_theme", next);
+        localStorage.setItem("icpm_theme", next);
         if (metaTheme) metaTheme.setAttribute("content", next === "dark" ? "#0b0d12" : "#f7f7fb");
       });
     })();
 
-    // Band layout for mudIndex (0..100)
-    // 0-20 dry, 21-45 soft, 46-70 muddy, 71-100 very muddy
-    function initBands(){
-      const p = (n) => n + "%";
-      el.bandGood.style.bottom = p(0);  el.bandGood.style.height = p(20);
-      el.bandSoft.style.bottom = p(20); el.bandSoft.style.height = p(25); // 20->45
-      el.bandMud.style.bottom  = p(45); el.bandMud.style.height  = p(25); // 45->70
-      el.bandBad.style.bottom  = p(70); el.bandBad.style.height  = p(30); // 70->100
+    // UI refs
+    const el = {
+      refreshBtn: document.getElementById("refreshBtn"),
+      updatedText: document.getElementById("updatedText"),
+      bigWord: document.getElementById("bigWord"),
+      label: document.getElementById("label"),
+      guidance: document.getElementById("guidance"),
+      statusDot: document.getElementById("statusDot"),
+      rain24: document.getElementById("rain24"),
+      rain12: document.getElementById("rain12"),
+      error: document.getElementById("error"),
+      apiLink: document.getElementById("apiLink"),
+    };
+    el.apiLink.href = API_URL;
+
+    function safeTime(iso){
+      if (!iso) return "—";
+      try { return new Date(iso).toLocaleString(); } catch { return iso; }
     }
-
-    function clamp(n,a,b){ return Math.max(a, Math.min(b, n)); }
-
-    // Convert mud index (0..100) into a vertical % position (0 bottom, 100 top)
-    function setIndicator(index){
-      const pct = clamp(index, 0, 100);
-
-      // line sits at that height
-      el.line.style.bottom = pct + "%";
-
-      // fill is below the line
-      el.fill.style.height = pct + "%";
-
-      // label follows the line
-      el.label.style.bottom = pct + "%";
-    }
-
     function fmt(n){
-      if (!Number.isFinite(n)) return "—";
-      return n.toFixed(1);
+      return Number.isFinite(n) ? n.toFixed(1) : "—";
     }
 
-    function colorForStatus(status){
+    // Map worker mud status -> your simple damp/not damp headline
+    function headlineFor(status){
+      // you can tune this later
+      if (status === "dry") return "Not damp";
+      if (status === "soft") return "A bit damp";
+      if (status === "muddy") return "Muddy";
+      if (status === "very_muddy") return "Very muddy";
+      return "Unknown";
+    }
+
+    function colorFor(status){
       switch(status){
         case "dry": return "var(--good)";
         case "soft": return "var(--soft)";
@@ -423,16 +295,8 @@
       }
     }
 
-    function safeTime(iso){
-      if (!iso) return "—";
-      try { return new Date(iso).toLocaleString(); } catch { return iso; }
-    }
-
     async function load(){
       el.error.textContent = "";
-      el.statusText.textContent = "Loading…";
-      el.guidance.textContent = "—";
-
       el.refreshBtn.disabled = true;
       el.refreshBtn.textContent = "Refreshing…";
 
@@ -443,35 +307,22 @@
         const data = await res.json();
         if (!data?.ok) throw new Error(data?.error || "API returned ok=false");
 
-        // Stats
-        el.rain24.textContent     = fmt(data?.totals?.rain_24h_mm);
-        el.rain72.textContent     = fmt(data?.totals?.rain_72h_mm);
-        el.rainNext12.textContent = fmt(data?.totals?.rain_next_12h_mm);
-        el.rainNext24.textContent = fmt(data?.totals?.rain_next_24h_mm);
-
-        // Hero
-        const idx = Number(data?.mud?.index_0_100);
-        setIndicator(Number.isFinite(idx) ? idx : 0);
-
         const status = data?.mud?.status || "unknown";
-        const label  = data?.mud?.label || "Unknown";
-        const emoji  = data?.mud?.emoji || "•";
-        const guidance = data?.mud?.guidance || "";
+        el.bigWord.textContent = headlineFor(status);
+        el.label.textContent = data?.mud?.label || "—";
+        el.guidance.textContent = data?.mud?.guidance || "—";
+        el.statusDot.style.background = colorFor(status);
 
-        el.emoji.textContent = emoji;
-        el.statusText.textContent = label;
-        el.guidance.textContent = guidance;
-        el.statusDot.style.background = colorForStatus(status);
-
-        // Updated + cache
+        el.rain24.textContent = fmt(Number(data?.totals?.rain_24h_mm));
+        el.rain12.textContent = fmt(Number(data?.totals?.rain_next_12h_mm));
         el.updatedText.textContent = "Updated: " + safeTime(data?.updatedAt);
-        const ttl = data?.cache?.ttlSeconds;
-        el.cacheText.textContent = Number.isFinite(ttl) ? `Cache: ${Math.round(ttl/60)} min` : "";
 
       }catch(e){
         console.error(e);
         el.error.textContent = "Couldn’t load data. " + (e?.message || "Unknown error");
-        el.statusText.textContent = "Unavailable";
+        el.bigWord.textContent = "Unavailable";
+        el.label.textContent = "—";
+        el.guidance.textContent = "—";
         el.statusDot.style.background = "transparent";
       }finally{
         el.refreshBtn.disabled = false;
@@ -479,9 +330,8 @@
       }
     }
 
-    initBands();
-    load();
     el.refreshBtn.addEventListener("click", load);
+    load();
   </script>
 </body>
 </html>
