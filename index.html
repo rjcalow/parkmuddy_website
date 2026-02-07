@@ -1,338 +1,181 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta charset="utf-8">
   <title>Is Clumber Park muddy?</title>
-  <meta name="description" content="A simple mud estimate for Clumber Park based on recent rainfall + forecast." />
-  <meta name="theme-color" content="#0b0d12" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+        content="A simple mud estimate for Clumber Park based on recent Environment Agency rainfall data.">
+
   <style>
-    :root{
-      --bg:#f7f7fb; --text:#0b0d12; --muted:#667085;
-      --stroke:rgba(0,0,0,0.12);
-      --card:rgba(255,255,255,0.78);
-      --shadow:0 18px 44px rgba(0,0,0,0.10);
-      --glass: blur(10px);
-      --good:#16a34a; --soft:#f59e0b; --mud:#fb923c; --bad:#ef4444;
-      --header-h:56px;
+    :root {
+      --bg: #ffffff;
+      --text: #111111;
+      --muted: #666666;
     }
-    @media (prefers-color-scheme: dark){
-      :root{
-        --bg:#0b0d12; --text:#f2f4f8; --muted:#aab3c2;
-        --stroke:rgba(255,255,255,0.14);
-        --card:rgba(18,22,34,0.78);
-        --shadow:0 22px 60px rgba(0,0,0,0.55);
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0e0f12;
+        --text: #f2f4f8;
+        --muted: #aab3c2;
       }
     }
-    html[data-theme="light"]{ color-scheme: light; }
-    html[data-theme="dark"]{ color-scheme: dark; }
 
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; margin:0; }
-    body{
-      background:var(--bg);
-      color:var(--text);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
 
-    /* Sticky minimal top bar */
-    header{
-      position:fixed; top:0; left:0; right:0; z-index:20;
-      height:var(--header-h);
-      border-bottom:1px solid var(--stroke);
-      background: color-mix(in srgb, var(--bg) 82%, transparent);
-      backdrop-filter: var(--glass);
-      display:flex; align-items:center;
-    }
-    .headerInner{
-      width:min(820px, 100%);
-      margin:0 auto;
-      padding:0 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-    }
-    .brand{ font-weight:950; letter-spacing:-0.02em; display:flex; gap:10px; align-items:center; }
-    .dot{ width:9px; height:9px; border-radius:50%; background:linear-gradient(135deg,var(--good),var(--soft),var(--bad)); }
-    .btn{
-      border:1px solid var(--stroke);
-      background:transparent;
-      color:var(--text);
-      border-radius:999px;
-      padding:8px 12px;
-      font-weight:850;
-      font-size:13px;
-      cursor:pointer;
+    main {
+      max-width: 680px;
+      padding: 24px 18px 40px;
+      margin: 0 auto;
     }
 
-    /* Scroll snapping */
-    #scroller{
-      height:100vh;
-      padding-top:var(--header-h);
-      overflow-y:auto;
-      -webkit-overflow-scrolling:touch;
-      scroll-snap-type:y mandatory;
-    }
-    section{
-      min-height:calc(100vh - var(--header-h));
-      scroll-snap-align:start;
-      padding:16px 16px calc(16px + env(safe-area-inset-bottom));
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    @media (prefers-reduced-motion: reduce){
-      #scroller{ scroll-snap-type:none; }
+    h1 {
+      font-size: clamp(36px, 8vw, 64px);
+      line-height: 1.05;
+      margin: 0 0 12px 0;
+      letter-spacing: -0.02em;
     }
 
-    .wrap{
-      width:min(820px, 100%);
-      display:grid;
-      gap:12px;
+    p {
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 12px 0;
     }
-    .card{
-      background:var(--card);
-      border:1px solid var(--stroke);
-      border-radius:24px;
-      padding:16px;
-      box-shadow:var(--shadow);
-      backdrop-filter: var(--glass);
-    }
-    .muted{ color:var(--muted); }
-    .tiny{ font-size:12px; }
-    a{ color:inherit; text-decoration:underline; text-underline-offset:3px; }
 
-    /* Big status */
-    .bigStatus{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      align-items:flex-start;
+    .status {
+      font-weight: 800;
     }
-    .bigWord{
-      font-size: clamp(42px, 10vw, 78px);
-      font-weight: 1000;
-      letter-spacing:-0.03em;
-      line-height:0.95;
-      margin:0;
+
+    .muted {
+      color: var(--muted);
+      font-size: 14px;
     }
-    .sub{
-      font-size:16px;
-      line-height:1.5;
-      margin:0;
+
+    footer {
+      margin-top: 32px;
+      border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+      padding-top: 16px;
     }
-    .pillRow{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      align-items:center;
-      margin-top:6px;
-    }
-    .pill{
-      border:1px solid var(--stroke);
-      border-radius:999px;
-      padding:6px 10px;
-      font-size:12px;
-      font-weight:850;
-      background: transparent;
-      display:inline-flex;
-      gap:8px;
-      align-items:center;
-    }
-    .statusDot{
-      width:10px; height:10px; border-radius:50%;
-      background: transparent;
-      border:1px solid var(--stroke);
+
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 3px;
     }
   </style>
 </head>
 
 <body>
-  <header>
-    <div class="headerInner">
-      <div class="brand"><span class="dot"></span><span>isclumberparkmuddy.com</span></div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <button class="btn" id="refreshBtn" type="button">Refresh</button>
-        <button class="btn" id="themeBtn" type="button">Theme</button>
-      </div>
-    </div>
-  </header>
+<main>
 
-  <main id="scroller">
-    <!-- 1) STATUS -->
-    <section id="status">
-      <div class="wrap">
-        <div class="card">
-          <div class="bigStatus">
-            <p class="tiny muted" id="updatedText" style="margin:0;">Updated: —</p>
+  <h1 id="headline">Loading…</h1>
 
-            <h1 class="bigWord" id="bigWord">Loading…</h1>
+  <p class="status" id="summary">—</p>
 
-            <p class="sub muted" id="guidance">—</p>
+  <p id="details">—</p>
 
-            <div class="pillRow">
-              <span class="pill"><span class="statusDot" id="statusDot"></span><span id="label">—</span></span>
-              <span class="pill">Rain 24h: <span id="rain24">—</span> mm</span>
-              <span class="pill">Next 12h: <span id="rain12">—</span> mm</span>
-            </div>
+  <p class="muted" id="updated">Updated: —</p>
 
-            <p class="tiny muted" id="error" style="margin:10px 0 0 0; min-height:16px;"></p>
-          </div>
-        </div>
+  <footer>
+    <p class="muted">
+      Based on recent rainfall near Clumber Park using the UK Environment Agency
+      flood-monitoring API.
+    </p>
+    <p class="muted">
+      <a href="/api">View raw data</a>
+    </p>
+  </footer>
 
-        <div class="card">
-          <p class="tiny muted" style="margin:0;">
-            Scroll ↓ for about
-          </p>
-        </div>
-      </div>
-    </section>
+</main>
 
-    <!-- 2) ABOUT -->
-    <section id="about">
-      <div class="wrap">
-        <div class="card">
-          <h2 style="margin:0; font-size:18px; font-weight:950;">About</h2>
-          <p class="muted" style="margin:10px 0 0 0; line-height:1.6;">
-            This is a simple “damp / not damp” estimate for Clumber Park based on recent rainfall and the short-term forecast.
-            It’s not an official report — conditions vary by route (main paths vs woodland).
-          </p>
-          <p class="tiny muted" style="margin:10px 0 0 0;">
-            Data source: Open-Meteo (via a cached Cloudflare Worker).
-          </p>
-          <p class="tiny muted" style="margin:10px 0 0 0;">
-            <a href="/api/" id="apiLink">View API JSON</a>
-          </p>
-        </div>
-      </div>
-    </section>
+<script>
+  const API_URL = "/api";
 
-    <!-- 3) SUPPORT -->
-    <section id="support">
-      <div class="wrap">
-        <div class="card">
-          <h2 style="margin:0; font-size:18px; font-weight:950;">Support</h2>
-          <p class="muted" style="margin:10px 0 0 0; line-height:1.6;">
-            If this page is useful and you want to support improvements (better accuracy, more parks, nicer sharing cards),
-            you can chip in.
-          </p>
+  function mudFrom(r24, r72) {
+    // Simple, readable logic — tune later if needed
+    const mudIndex = Math.min(100, (r72 * 2) + (r24 * 4));
 
-          <!-- Replace this with your real link -->
-          <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-            <a class="btn" href="#" onclick="alert('Add your support link here (Ko-fi / BuyMeACoffee).'); return false;"
-               style="text-decoration:none; display:inline-block;">Support</a>
-            <span class="tiny muted">Thanks ❤️</span>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
+    if (mudIndex <= 20) {
+      return {
+        headline: "Not muddy",
+        summary: "Ground should be firm on most paths.",
+      };
+    }
 
-  <script>
-    // Your worker endpoint (same domain)
-    const API_URL = "/api/";
+    if (mudIndex <= 45) {
+      return {
+        headline: "A bit muddy",
+        summary: "Some soft ground, especially off main paths.",
+      };
+    }
 
-    // Theme toggle
-    (function(){
-      const root = document.documentElement;
-      const metaTheme = document.querySelector('meta[name="theme-color"]');
-      const saved = localStorage.getItem("icpm_theme");
-      if (saved === "light" || saved === "dark") root.dataset.theme = saved;
-      if (metaTheme) metaTheme.setAttribute("content", root.dataset.theme === "dark" ? "#0b0d12" : "#f7f7fb");
+    if (mudIndex <= 70) {
+      return {
+        headline: "Muddy",
+        summary: "Expect mud on woodland trails. Boots recommended.",
+      };
+    }
 
-      document.getElementById("themeBtn").addEventListener("click", () => {
-        const cur = root.dataset.theme || "";
-        const next = (cur === "dark") ? "light" : "dark";
-        root.dataset.theme = next;
-        localStorage.setItem("icpm_theme", next);
-        if (metaTheme) metaTheme.setAttribute("content", next === "dark" ? "#0b0d12" : "#f7f7fb");
-      });
-    })();
-
-    // UI refs
-    const el = {
-      refreshBtn: document.getElementById("refreshBtn"),
-      updatedText: document.getElementById("updatedText"),
-      bigWord: document.getElementById("bigWord"),
-      label: document.getElementById("label"),
-      guidance: document.getElementById("guidance"),
-      statusDot: document.getElementById("statusDot"),
-      rain24: document.getElementById("rain24"),
-      rain12: document.getElementById("rain12"),
-      error: document.getElementById("error"),
-      apiLink: document.getElementById("apiLink"),
+    return {
+      headline: "Very muddy",
+      summary: "Wet ground and puddles likely. Boots or wellies advised.",
     };
-    el.apiLink.href = API_URL;
+  }
 
-    function safeTime(iso){
-      if (!iso) return "—";
-      try { return new Date(iso).toLocaleString(); } catch { return iso; }
+  function fmt(n) {
+    return Number.isFinite(n) ? n.toFixed(1) : "—";
+  }
+
+  function safeTime(iso) {
+    try { return new Date(iso).toLocaleString(); }
+    catch { return iso || "—"; }
+  }
+
+  async function load() {
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error("API error " + res.status);
+
+      const data = await res.json();
+      if (!data.ok) throw new Error("API returned ok=false");
+
+      const r24 = Number(data.rain_24h_mm);
+      const r72 = Number(data.rain_72h_mm);
+
+      const mud = mudFrom(
+        Number.isFinite(r24) ? r24 : 0,
+        Number.isFinite(r72) ? r72 : 0
+      );
+
+      document.getElementById("headline").textContent = mud.headline;
+      document.getElementById("summary").textContent = mud.summary;
+
+      document.getElementById("details").textContent =
+        `Rainfall: ${fmt(r24)} mm in the last 24 hours, ` +
+        `${fmt(r72)} mm in the last 72 hours.`;
+
+      document.getElementById("updated").textContent =
+        "Updated: " + safeTime(data.builtAt || data.latest_reading);
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById("headline").textContent = "Unavailable";
+      document.getElementById("summary").textContent =
+        "Could not load rainfall data at the moment.";
+      document.getElementById("details").textContent = "";
     }
-    function fmt(n){
-      return Number.isFinite(n) ? n.toFixed(1) : "—";
-    }
+  }
 
-    // Map worker mud status -> your simple damp/not damp headline
-    function headlineFor(status){
-      // you can tune this later
-      if (status === "dry") return "Not damp";
-      if (status === "soft") return "A bit damp";
-      if (status === "muddy") return "Muddy";
-      if (status === "very_muddy") return "Very muddy";
-      return "Unknown";
-    }
-
-    function colorFor(status){
-      switch(status){
-        case "dry": return "var(--good)";
-        case "soft": return "var(--soft)";
-        case "muddy": return "var(--mud)";
-        case "very_muddy": return "var(--bad)";
-        default: return "transparent";
-      }
-    }
-
-    async function load(){
-      el.error.textContent = "";
-      el.refreshBtn.disabled = true;
-      el.refreshBtn.textContent = "Refreshing…";
-
-      try{
-        const res = await fetch(API_URL, { headers: { "Accept":"application/json" }});
-        if (!res.ok) throw new Error("API HTTP " + res.status);
-
-        const data = await res.json();
-        if (!data?.ok) throw new Error(data?.error || "API returned ok=false");
-
-        const status = data?.mud?.status || "unknown";
-        el.bigWord.textContent = headlineFor(status);
-        el.label.textContent = data?.mud?.label || "—";
-        el.guidance.textContent = data?.mud?.guidance || "—";
-        el.statusDot.style.background = colorFor(status);
-
-        el.rain24.textContent = fmt(Number(data?.totals?.rain_24h_mm));
-        el.rain12.textContent = fmt(Number(data?.totals?.rain_next_12h_mm));
-        el.updatedText.textContent = "Updated: " + safeTime(data?.updatedAt);
-
-      }catch(e){
-        console.error(e);
-        el.error.textContent = "Couldn’t load data. " + (e?.message || "Unknown error");
-        el.bigWord.textContent = "Unavailable";
-        el.label.textContent = "—";
-        el.guidance.textContent = "—";
-        el.statusDot.style.background = "transparent";
-      }finally{
-        el.refreshBtn.disabled = false;
-        el.refreshBtn.textContent = "Refresh";
-      }
-    }
-
-    el.refreshBtn.addEventListener("click", load);
-    load();
-  </script>
+  load();
+</script>
 </body>
 </html>
 
